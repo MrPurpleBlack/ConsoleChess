@@ -1,25 +1,35 @@
-﻿using System;
+﻿using ConsoleChess.BusinessLogic;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ConsoleChess.Figures
 {
-    class ChessPiece
+    public class ChessPiece
     {
         /// <summary>
-        /// Figure Name
+        /// Figure name
         /// </summary>
-        public string Name { get; set; }
+        public virtual string Name { get;}
 
         /// <summary>
-        /// X coordinate of figure
+        /// Display char
         /// </summary>
-        public byte X { get; set; }
+        public virtual char Display { get; }
+
         /// <summary>
-        /// X coordinate of figure
+        /// Pieces side
         /// </summary>
-        public byte Y { get; set; }
+        public ConsoleColor Side { get; private set; }
+
+        public ConsoleColor CellColor => Side == Constants.Black ? Constants.White : Constants.Black;
+        public ConsoleColor PieceColor => Side == Constants.Black ? Constants.Black : Constants.White;
 
 
+
+        public ChessPiece(ConsoleColor side)
+        {
+            Side = side;
+        }  
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ConsoleChess.BusinessLogic;
+using ConsoleChess.GameElements.Board;
+using System;
 
 namespace ConsoleChess
 {
@@ -6,7 +8,8 @@ namespace ConsoleChess
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var proc = new GameProcessor();
+            proc.Start();        
         }
     }
 }

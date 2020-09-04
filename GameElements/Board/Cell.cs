@@ -1,9 +1,10 @@
-﻿using ConsoleChess.Figures;
+﻿using ConsoleChess.BusinessLogic;
+using ConsoleChess.Figures;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ConsoleChess.Game_elements.Board
+namespace ConsoleChess.GameElements.Board
 {
     class Cell
     {
@@ -21,6 +22,13 @@ namespace ConsoleChess.Game_elements.Board
         /// Chess piece
         /// </summary>
         public ChessPiece Piece { get; private set; }
+
+        /// <summary>
+        /// Cell color
+        /// </summary>
+        public ConsoleColor Color => (X % 2 == 0) ^ (Y % 2 == 1)
+                ? Constants.White
+                : Constants.Black;
 
         public Cell(byte x, byte y)
         {
@@ -41,6 +49,22 @@ namespace ConsoleChess.Game_elements.Board
                 return true;
             }
             return false;
+        }
+
+        public void ClearOccupation()
+        {
+            Piece = null;
+        }
+
+
+        public bool IsAvailableStartingPosition(ConsoleColor player)
+        {
+            return Piece != null && Piece.Side == player;
+        }
+
+        public bool IsAvailabledestinationPosition(ConsoleColor player)
+        {
+            return Piece != null && Piece.Side == player;
         }
     }
 }
