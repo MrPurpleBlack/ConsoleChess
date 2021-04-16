@@ -1,27 +1,33 @@
-﻿using ConsoleChess.Figures;
-using ConsoleChess.GameElements.Board;
+﻿using ConsoleChess.GameElements.Board;
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace ConsoleChess.BusinessLogic
 {
     class DrawProcessor
     {
+        /// <summary>
+        /// Board for the drawing
+        /// </summary>
         public Board MainBoard { get; set; }
 
-        private readonly byte _cellSize = Constants.CellSize;
+        /// <summary>
+        /// Width of the cell in chars
+        /// </summary>
+        private readonly byte _cellWidth = Constants.CellWidth;
+        /// <summary>
+        /// Height of the cell in chars
+        /// </summary>
         private readonly byte _cellHeight = Constants.CellHeight;
 
         private readonly ConsoleColor _whiteColor = Constants.White;
         private readonly ConsoleColor _blackColor = Constants.Black;
 
-        public DrawProcessor(Board board)
+        public DrawProcessor()
         {
             Console.OutputEncoding = Encoding.Unicode;
-            Console.WindowHeight = (board.Rank + 4) * _cellHeight;
-            Console.WindowWidth = (board.Rank + 1) * _cellSize;
-            MainBoard = board;
+            Console.WindowHeight = 50;
+            Console.WindowWidth = 30;
         }
 
         /// <summary>
@@ -40,6 +46,17 @@ namespace ConsoleChess.BusinessLogic
         public void Clear()
         {
             Console.Clear();
+        }
+
+        /// <summary>
+        /// Set the board for the game
+        /// </summary>
+        public void SetBoard(Board board)
+        {
+            MainBoard = board;
+            
+            Console.WindowHeight = (MainBoard.Rank + 5) * _cellHeight;
+            Console.WindowWidth = (MainBoard.Rank + 2) * _cellWidth;
         }
 
 
@@ -84,8 +101,8 @@ namespace ConsoleChess.BusinessLogic
 
             if (isCenterOfCell)
             {
-                cellColor = cell.Piece?.CellColor ?? cell.Color;
-                pieceColor = cell.Piece?.PieceColor ?? cell.Color;
+                cellColor = GetOppositeColor(cell.Piece?.Player?.Color) ?? cell.Color;
+                pieceColor = cell.Piece?.Player?.Color ?? cell.Color;
                 display = cell.Piece?.Display ?? ' ';
             }
 
@@ -95,7 +112,7 @@ namespace ConsoleChess.BusinessLogic
 
         private void DrawOneLineCell(ConsoleColor emptyColor, ConsoleColor cellColor, ConsoleColor pieceColor, char display)
         {
-            var offset = _cellSize / 2;
+            var offset = _cellWidth / 2;
 
             SetCellColor(emptyColor);
             SetPieceColor(emptyColor);
@@ -107,7 +124,7 @@ namespace ConsoleChess.BusinessLogic
 
             SetCellColor(emptyColor);
             SetPieceColor(emptyColor);
-            Console.Write(new string(' ', _cellSize - offset - 1));
+            Console.Write(new string(' ', _cellWidth - offset - 1));
         }
 
 
@@ -116,6 +133,7 @@ namespace ConsoleChess.BusinessLogic
             SetCellColor(_blackColor);
             SetPieceColor(Constants.Error);
             Console.WriteLine(error);
+            SetPieceColor(_whiteColor);
         }
 
         public void Display(string info)
@@ -135,6 +153,13 @@ namespace ConsoleChess.BusinessLogic
         private void SetPieceColor(ConsoleColor color)
         {
             Console.ForegroundColor = color;
+        }
+
+        private ConsoleColor? GetOppositeColor(ConsoleColor? color)
+        {
+            if (color == null)
+                return null;
+            return (ConsoleColor)(15 - (int)color);
         }
     }
 }

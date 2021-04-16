@@ -1,61 +1,97 @@
-﻿using ConsoleChess.Figures;
+﻿using ConsoleChess.GameElements;
 using ConsoleChess.GameElements.Board;
+using ConsoleChess.GameElements.Presets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
 
 namespace ConsoleChess.BusinessLogic
 {
     class GameProcessor
     {
-        public Board MainBoard { get; set; }
-        private DrawProcessor DrawProcessor { get; }
+        /// <summary>
+        /// Board for the game
+        /// </summary>
+        public Board MainBoard { get; private set; }
+
+        /// <summary>
+        /// Collection of players
+        /// </summary>
+        private Queue<Player> Players { get; set; }
+
+        /// <summary>
+        /// Player that is making the move
+        /// </summary>
+        private Player CurrentPlayer { get; set; }
+
+        /// <summary>
+        /// Last move result
+        /// </summary>
+        private MoveResult LastMoveResult { get; set; }
 
 
-        private ConsoleColor _currentSide { get; set; }
-        private Cell From { get; set; }
-        private Cell To { get; set; }
 
-        private List<string> Errors { get; set; }
+        private DrawProcessor DrawProcessor { get; set; }
+        private MovementProcessor MovementProcessor { get; set; }
 
 
 
         public GameProcessor()
         {
-            MainBoard = new Board();
-            _currentSide = Constants.White;
-            DrawProcessor = new DrawProcessor(MainBoard);
-            Errors = new List<string>();
+            DrawProcessor = new DrawProcessor();
+            MovementProcessor = new MovementProcessor();
+        }
+
+
+        public void SetPreset(Preset preset)
+        {
+            try
+            {
+                MainBoard = new Board(preset.BoardRank);
+                DrawProcessor.SetBoard(MainBoard);
+                MovementProcessor.SetBoard(MainBoard);
+                Players = preset.Players;
+                MainBoard.SetPieces(preset.StartingPosition);
+                SwapSides();
+            }
+            catch{
+                DrawProcessor.Display("Invalid game preset");
+            }
+
         }
 
         public void Start()
         {
+            if (MainBoard == null || DrawProcessor.MainBoard == null || MovementProcessor.MainBoard == null)
+                throw new NullReferenceException();
 
 
             while (true)
                 Turn();
-
 
         }
 
 
         private void Turn()
         {
-            DrawProcessor.Clear();
-            DrawProcessor.DrawBoard();
-            DisplayInfo();
-            DisplayErrors();
-
-            ParseAndValidate(GetMove());
-
-            if(!Errors.Any())
+            try
             {
-                MakeMove();
-                SwapSides();
-            }
+                DrawProcessor.Clear();
+                DrawProcessor.DrawBoard();
+                DisplayInfo();
 
-            
+                LastMoveResult = LastMoveResult == MoveResult.NeedToConvert 
+                    ? MovementProcessor.ConvertPiece(GetMove(), CurrentPlayer)
+                    : LastMoveResult = MovementProcessor.ProcessAMove(GetMove(), CurrentPlayer);
+
+                if (LastMoveResult == MoveResult.Success)
+                    SwapSides();
+            }
+            catch (NullReferenceException)
+            {
+
+            }
         }
 
 
@@ -65,98 +101,55 @@ namespace ConsoleChess.BusinessLogic
             return Console.ReadLine();
         }
 
-        private void MakeMove()
-        {
-            To.SetOccupation(From.Piece);
-            From.ClearOccupation();
-        }
-
-
-
-        private void ParseAndValidate(string move)
-        {
-            try
-            {
-                var cells = move.Trim().Split(' ');
-                if (cells.Length > 2)
-                    throw new IndexOutOfRangeException();
-
-
-                //Parse and Validate starting cell
-                var (x, y) = ParseCellNum(cells[0]);
-
-                Console.WriteLine(x);
-                Console.WriteLine(y);
-                Console.ReadLine();
-                From = MainBoard.GetCell(x, y);
-
-                CheckFromCellForAvailability();
-
-
-                //Parse and Validate destination cell
-                (x, y) = ParseCellNum(cells[1]);
-                To = MainBoard.GetCell(x, y);
-
-                Console.WriteLine(x);
-                Console.WriteLine(y);
-                Console.ReadLine();
-
-                CheckToCellForAvailability();
-            }
-            catch
-            {
-                Errors.Add("Input format of your move is wrong. Try Again");
-            }
-        }
-
-        private (byte,byte) ParseCellNum(string cell)
-        {
-            byte x = (byte)(cell[0] - 65);
-            byte y = (byte)(cell[1] - 49);
-            return (x, y);
-        }
-
-        private void CheckFromCellForAvailability()
-        {
-            if (From.Piece == null)
-                Errors.Add("Chosen starting position is empty");
-
-            if(From.Piece != null && From.Piece.Side != _currentSide)
-                Errors.Add($"Chosen piece is {From.Piece.Side} {From.Piece.Name}. Now is {_currentSide}'s turn.");
-        }
-
-        private void CheckToCellForAvailability()
-        {
-            if (To.Piece != null && To.Piece.Side == _currentSide)
-                Errors.Add($"Chosen destination position is occupied by your {To.Piece.Side} {To.Piece.Name}");
-
-        }
-
-
-
         private void DisplayInfo()
         {
+            switch (LastMoveResult)
+            {
+                case MoveResult.Success:
+                default:
+                    break;
+                case MoveResult.NeedToConvert:
+                    DrawProcessor.Display($"{CurrentPlayer.Color} pawn is ready to convert.");
+                    DrawProcessor.Display($"Please choose piece pawb wiil be converted into: ");
+                    DrawProcessor.Display($"Ф - Queen");
+                    DrawProcessor.Display($"i - Bishop");
+                    DrawProcessor.Display($"2 - Knight");
+                    DrawProcessor.Display($"Д - Rook");
+                    DrawProcessor.Display($"");
+                    break;
+                case MoveResult.WrongInputFormat:
+                    DrawProcessor.DisplayError("Wrong format");
+                    break;
+                case MoveResult.WrongBeginningCell:
+                    DrawProcessor.DisplayError($"Chosen piece is not yours. Choose {CurrentPlayer.Color} piece");
+                    break;
+                case MoveResult.EmptyBeginningCell:
+                    DrawProcessor.DisplayError("Chosen starting cell is empty");
+                    break;
+                case MoveResult.WrongDestinationCell:
+                    break;
+                case MoveResult.OccupiedDestinationCell:
+                    DrawProcessor.DisplayError("Chosen target cell is occupied by your piece");
+                    break;
+                case MoveResult.ImpossibleMove:
+                    DrawProcessor.DisplayError("Chosen piece cannot move to the target cell");
+                    break;
+
+            }
+
             DrawProcessor.Display("");
-            DrawProcessor.Display("Type in your move in following format - \"A7 A5\"");
+            DrawProcessor.Display("Type in your move in following format - \"A7 A5\",\"B5 E2\",\"G8 F6\"");
             DrawProcessor.Display("");
-            DrawProcessor.Display($"Now is {_currentSide}'s turn");
+            DrawProcessor.Display($"Now is {CurrentPlayer.Name}'s turn");
+
         }
 
-
-        private void DisplayErrors()
-        {
-            foreach(var error in Errors)
-                DrawProcessor.DisplayError(error);
-
-            Errors.Clear();
-        }
 
         private void SwapSides()
         {
-            _currentSide = _currentSide == Constants.Black ? Constants.White : Constants.Black;
+            if(CurrentPlayer != null)
+                Players.Enqueue(CurrentPlayer);
+            CurrentPlayer = Players.Dequeue();
         }
-
-
-        
     }
 }

@@ -1,12 +1,10 @@
 ﻿using ConsoleChess.BusinessLogic;
-using ConsoleChess.Figures;
+using ConsoleChess.GameElements.Pieces;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ConsoleChess.GameElements.Board
 {
-    class Cell
+    public class Cell
     {
         /// <summary>
         /// X coordinate of cell
@@ -21,7 +19,10 @@ namespace ConsoleChess.GameElements.Board
         /// <summary>
         /// Chess piece
         /// </summary>
-        public ChessPiece Piece { get; private set; }
+        public Piece Piece { get; private set; }
+
+
+        public string AlphabeticalNum => Convert.ToChar(65 + X).ToString() + Convert.ToChar(49 + Y);
 
         /// <summary>
         /// Cell color
@@ -41,30 +42,15 @@ namespace ConsoleChess.GameElements.Board
             return Piece != null;
         }
 
-        public bool SetOccupation(ChessPiece chessPiece)
+        public void SetOccupation(Piece piece)
         {
-            if(!IsOccupied())
-            {
-                Piece = chessPiece;
-                return true;
-            }
-            return false;
+            Piece = piece;
+
         }
 
         public void ClearOccupation()
         {
             Piece = null;
-        }
-
-
-        public bool IsAvailableStartingPosition(ConsoleColor player)
-        {
-            return Piece != null && Piece.Side == player;
-        }
-
-        public bool IsAvailabledestinationPosition(ConsoleColor player)
-        {
-            return Piece != null && Piece.Side == player;
         }
     }
 }
